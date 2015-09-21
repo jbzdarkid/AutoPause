@@ -5,7 +5,7 @@ public Plugin:myinfo =
     name = "L4D2 Auto-pause",
     author = "Darkid",
     description = "When a player disconnects due to crash, automatically pause the game.",
-    version = "1.0",
+    version = "1.2",
     url = "https://github.com/jbzdarkid/AutoPause"
 }
 
@@ -26,8 +26,8 @@ public bool:isPlayer(any:client) {
 public round_start(Handle:event, const String:name[], bool:dontBroadcast) {
     new index = 0;
     for (new client=1; client<=MaxClients; client++) {
+        if (!IsClientInGame(client)) continue;
         if (IsFakeClient(client)) continue;
-        if (!IsClientConnected(client)) continue;
         new team = GetClientTeam(client);
         if (team != 2 && team != 3) continue;
         activePlayers[index] = client;
