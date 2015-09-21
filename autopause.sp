@@ -43,8 +43,8 @@ public player_disconnect(Handle:event, const String:name[], bool:dontBroadcast) 
     GetEventString(event, "reason", reason, sizeof(reason));
     if (strcmp(reason, "Player timed out.") == 0 || strcmp(reason, "No steam logon.") == 0) {
         ServerCommand("sm_pause");
+        decl String:playerName[128];
+        GetEventString(event, "name", playerName, sizeof(playerName));
+        PrintToChatAll("[AutoPause] Player %s crashed.", playerName);
     }
-    decl String:playerName[128];
-    GetEventString(event, "name", playerName, sizeof(playerName));
-    PrintToChatAll("[AutoPause] Player %s crashed.", playerName);
 }
