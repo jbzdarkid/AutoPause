@@ -75,7 +75,7 @@ public player_team(Handle:event, const String:name[], bool:dontBroadcast) {
     }
     if (firstOpen == -1) {
         LogMessage("[AutoPause] Error: Player joined team but couldn't find open spot.");
-    } else {
+    } else if (strcmp(steamId, "BOT") != 0) { // Don't add bots.
         activePlayers[firstOpen] = steamId;
         spawnTimers[firstOpen] = -1.0;
     }
@@ -84,9 +84,10 @@ public player_team(Handle:event, const String:name[], bool:dontBroadcast) {
 public player_disconnect(Handle:event, const String:name[], bool:dontBroadcast) {
     new client = GetClientOfUserId(GetEventInt(event, "userid"));
     if (client <= 0 || client > MaxClients) return;
+    if (!GetConVarBool(enabled)) return;
     decl String:steamId[64];
     GetClientAuthString(client, steamId, sizeof(steamId));
-    if (!GetConVarBool(enabled)) return;
+    if (strcmp(steamId, "BOT") == 0) return;
     for (new i=0; i<8; i++) {
         if (strcmp(activePlayers[i], steamId) == 0) {
             new Float:timeLeft = -1.0;
