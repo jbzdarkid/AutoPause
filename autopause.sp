@@ -7,7 +7,7 @@ public Plugin:myinfo =
     name = "L4D2 Auto-pause",
     author = "Darkid",
     description = "When a player disconnects due to crash, automatically pause the game. When they rejoin, give them a correct spawn timer.",
-    version = "1.4",
+    version = "1.5",
     url = "https://github.com/jbzdarkid/AutoPause"
 }
 
@@ -52,8 +52,11 @@ public player_team(Handle:event, const String:name[], bool:dontBroadcast) {
     decl String:steamId[64];
     GetClientAuthString(client, steamId, sizeof(steamId));
 
+    new firstOpen = -1;
     for (new i=0; i<8; i++) {
-        if (strcmp(activePlayers[i], steamId) == 0) {
+        if (firstOpen == -1 && strcmp(activePlayers[i], "") == 0) {
+            firstOpen = i;
+        } else if (strcmp(activePlayers[i], steamId) == 0) {
             switch (GetEventInt(event, "team")) {
             case 1: { // Joined spectator, remove.
                 activePlayers[i] = "";
@@ -69,6 +72,12 @@ public player_team(Handle:event, const String:name[], bool:dontBroadcast) {
             }
             return;
         }
+    }
+    if (firstOpen == -1) {
+        LogMessage("[AutoPause] Error: Player joined team but couldn't find open spot.");
+    } else {
+        activePlayers[firstOpen] = steamId;
+        spawnTimers[firstOpen] = -1.0;
     }
 }
 
