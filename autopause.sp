@@ -24,7 +24,7 @@ public OnPluginStart() {
     apdebug = CreateConVar("autopause_apdebug", "1", "Whether or not to debug information.");
 
     crashedPlayers = CreateTrie();
-    infectedPlayers = CreateArray();
+    infectedPlayers = CreateArray(64);
 
     HookEvent("round_start", round_start);
     HookEvent("player_team", playerTeam);
@@ -46,13 +46,11 @@ public playerTeam(Handle:event, const String:name[], bool:dontBroadcast) {
     if (strcmp(steamId, "BOT") == 0) return;
     new oldTeam = GetEventInt(event, "oldteam");
     new newTeam = GetEventInt(event, "team");
-    
-    if (GetConVarBool(apdebug)) PrintToChatAll("[AutoPause] Player %s changed team %d -> %d", steamId, oldTeam, newTeam);
-    
+
+    new index = FindStringInArray(infectedPlayers, steamId);
     if (oldTeam == 3) {
-        new index = FindStringInArray(infectedPlayers, steamId);
         if (index != -1) RemoveFromArray(infectedPlayers, index);
-        if (GetConVarBool(apdebug)) PrintToChatAll("[AutoPause] Removed player %s from infected team.", steamId);
+        if (GetConVarBool(apdebug)) LogMessage("[AutoPause] Removed player %s from infected team.", steamId);
     }
     if (newTeam == 3) {
         decl Float:spawnTime;
@@ -60,10 +58,10 @@ public playerTeam(Handle:event, const String:name[], bool:dontBroadcast) {
             new CountdownTimer:spawnTimer = L4D2Direct_GetSpawnTimer(client);
             CTimer_Start(spawnTimer, spawnTime);
             RemoveFromTrie(crashedPlayers, steamId);
-            if (GetConVarBool(apdebug)) PrintToChatAll("[AutoPause] Player %s rejoined, set spawn timer to %f.", steamId, spawnTime);
-        } else {
+            LogMessage("[AutoPause] Player %s rejoined, set spawn timer to %f.", steamId, spawnTime);
+        } else if (index == -1) {
             PushArrayString(infectedPlayers, steamId);
-            if (GetConVarBool(apdebug)) PrintToChatAll("[AutoPause] Added player %s to infected team.");
+            if (GetConVarBool(apdebug)) LogMessage("[AutoPause] Added player %s to infected team.", steamId);
         }
     }
 }
@@ -82,7 +80,7 @@ public playerDisconnect(Handle:event, const String:name[], bool:dontBroadcast) {
     decl String:timedOut[256];
     Format(timedOut, sizeof(timedOut), "%s timed out", playerName);
 
-    if (GetConVarBool(apdebug)) PrintToChatAll("[AutoPause] Player %s (%s) left the game: %s", playerName, steamId, reason);
+    if (GetConVarBool(apdebug)) LogMessage("[AutoPause] Player %s (%s) left the game: %s", playerName, steamId, reason);
 
     // If the leaving player crashed, pause.
     if (strcmp(reason, timedOut) == 0 || strcmp(reason, "No Steam logon") == 0) {
@@ -102,7 +100,7 @@ public playerDisconnect(Handle:event, const String:name[], bool:dontBroadcast) {
         new CountdownTimer:spawnTimer = L4D2Direct_GetSpawnTimer(client);
         if (spawnTimer != CTimer_Null) {
             timeLeft = CTimer_GetRemainingTime(spawnTimer);
-            PrintToChatAll("[AutoPause] Player %s left the game with %f time until spawn.", steamId, timeLeft);
+            LogMessage("[AutoPause] Player %s left the game with %f time until spawn.", steamId, timeLeft);
             SetTrieValue(crashedPlayers, steamId, timeLeft);
         }
     }
